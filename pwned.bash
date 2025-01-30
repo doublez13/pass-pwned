@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
 cmd_pwned_usage() {
-  echo "Usage: pass pwned [--line,-l] pass-name"
+  echo "Usage: pass pwned [--line,-l] [--all,-a] pass-name"
   echo "   Check HIBP to see if the password has been exposed in a breach"
   echo "   using SHA-1 and k-anonymity. Only the first five characters of"
   echo "   the password's SHA1 hash ever get sent from your computer.    "
@@ -12,7 +12,7 @@ cmd_pwned_usage() {
 }
 
 cmd_pwned_version() {
-  local version="v0.0.1"
+  local version="v0.1.0"
   echo "pass-pwned $version"
   exit 0
 }
@@ -38,31 +38,36 @@ cmd_check_hibp() {
   [[ "$http_code" != 200 ]] && die "Error returned from HIBP"
 
   count="$(echo "$response" | head -n -1 | grep -i "$suffix" | cut -d ':' -f 2 | tr -d '\r')"
-
-  [[ -z "$count" ]] && die "Good news — no pwnage found!"
-  echo "Oh no - pwned!"
-  echo "This password has been seen $count times before."
+  [[ -z "$count" ]] && echo -e "\tGood news — no pwnage found!\n" && return
+  echo -e "\tOh no - pwned!"
+  echo -e "\tThis password has been seen $count times before.\n"
 }
 
 cmd_pwned() {
-  local opts line=1
-  opts="$($GETOPT -o l: -l line: -n "$PROGRAM" -- "$@")" || exit $?
+  local opts line=1 all=0
+  opts="$($GETOPT -o al: -l all,line: -n "$PROGRAM" -- "$@")" || exit $?
   eval set -- "$opts"
   while true; do case $1 in
     -l|--line) line="$2"; shift 2 ;;
+    -a|--all)  all=1;     shift 1 ;;
     --) shift; break ;;
   esac done
   [[ $line =~ ^[0-9]+$ ]] || die "line must be a number"
   
   local path="$1"
-  [[ -z "$path" ]] && cmd_pwned_usage
+  [[ $all == 1 ]] && [[ -n "$path" ]] && cmd_pwned_usage
+  [[ $all == 0 ]] && [[ -z "$path" ]] && cmd_pwned_usage
 
-  local passfile="$PREFIX/$path.gpg"
-  check_sneaky_paths "$path"
-  
-  pass="$($GPG -d "${GPG_OPTS[@]}" "$passfile" | tail -n +"${line}" | head -n 1)" || exit $?
-  [[ -z $pass ]] && die "Empty file or line"
-  cmd_check_hibp
+  [[ -z "$path" ]] && path='*'
+
+  local passfile
+  for passfile in $(find "$PREFIX/" -type f -wholename "$PREFIX/$path.gpg"); do
+    check_sneaky_paths "$path"
+    pass="$($GPG -d "${GPG_OPTS[@]}" "$passfile" | tail -n +"${line}" | head -n 1)" || exit $?
+    echo ${passfile#$PREFIX/} 
+    [[ -z $pass ]] && echo -e  "\tEmpty file or line\n" && continue
+    cmd_check_hibp
+  done
 }
 
 case "$1" in
