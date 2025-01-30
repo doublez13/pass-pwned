@@ -60,6 +60,7 @@ cmd_pwned() {
 
   [[ -z "$path" ]] && path='*'
 
+  local IFS=$'\n'
   local passfile
   for passfile in $(find "$PREFIX/" -type f -wholename "$PREFIX/$path.gpg"); do
     check_sneaky_paths "$path"
