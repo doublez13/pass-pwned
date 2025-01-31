@@ -3,7 +3,7 @@ A [pass](https://www.passwordstore.org/) extension for checking against [Have I 
 
 ## Usage
 ```
-Usage: pass pwned [--line,-l] pass-name
+Usage: pass pwned [--line,-l] [--all,-a] pass-name
    Check HIBP to see if the password has been exposed in a breach
    using SHA-1 and k-anonymity. Only the first five characters of
    the password's SHA1 hash ever get sent from your computer.
@@ -12,11 +12,35 @@ Usage: pass pwned [--line,-l] pass-name
 ## Examples
 ```
 # pass pwned truth/epsilonprogram.com
-Good news — no pwnage found!
+   Good news — no pwnage found!
+
 
 # pass pwned social/lifeinvader.com
-Oh no - pwned!
-This password has been seen 6 times before.
+   Oh no - pwned!
+   This password has been seen 6 times before.
+
+
+# pass pwned -a
+truth/epsilonprogram.com.gpg
+	Good news — no pwnage found!
+
+social/lifeinvader.com.gpg
+   Oh no - pwned!
+   This password has been seen 6 times before.
+
+finance/lcn-exchange.com.gpg
+	Good news — no pwnage found!
+
+finance/thebankofliberty.com.gpg
+	Good news — no pwnage found!
+
+
+# pass pwned "finance/*"
+finance/lcn-exchange.com.gpg
+	Good news — no pwnage found!
+
+finance/thebankofliberty.com.gpg
+	Good news — no pwnage found!
 ```
 
 ## How does it work?
@@ -34,5 +58,5 @@ See [this blog post](https://www.troyhunt.com/ive-just-launched-pwned-passwords-
 './pwned.bash' -> '/usr/lib/password-store/extensions/pwned.bash'
 
 # pass pwned --version
-pass-pwned v0.0.1
+pass-pwned v0.1.0
 ```
